@@ -1,7 +1,10 @@
 #Streamlit UI integration with full agentic AI code by Clement Ogugua Asogwa
 """
 complete Streamlit app that uses your full Agentic AI extension with guideline-aware recommendations code, adds branding (colors, fonts), and includes a landing page with a brief intro.
-It replaces the Gradio UI with Streamlit tabs while keeping all your original logic intact.
+
+See the video in LinkedIn for this demo. 
+
+***This is a practical project, sensitive/all private information have been removed!
 """
 
 # GPT4GP: Multi-System Referral & Agentic Triage Assistant (Guideline-aware) - Streamlit UI
@@ -42,52 +45,6 @@ st.set_page_config(
 )
 
 
-st.markdown("""
-    <style>
-    /* Global */
-    html, body, [class*="css"]  {
-        font-family: 'Segoe UI', system-ui, -apple-system, Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Liberation Sans', sans-serif;
-        background-color: #f7f9fc;
-    }
-    /* Headings */
-    h1, h2, h3 {
-        color: #0a3d62;
-        font-weight: 650;
-    }
-    /* Buttons */
-    .stButton>button {
-        background-color: #0a3d62;
-        color: #ffffff;
-        border-radius: 8px;
-        padding: 0.6em 1.2em;
-        border: 0px;
-        font-weight: 600;
-    }
-    .stButton>button:hover {
-        background-color: #1b5fa7;
-        color: #ffffff;
-        border: 0px;
-    }
-    /* Cards look */
-    .card {
-        background: #ffffff;
-        border-radius: 12px;
-        padding: 18px;
-        box-shadow: 0 4px 14px rgba(0,0,0,0.06);
-        margin-bottom: 16px;
-        border: 1px solid #eef2f7;
-    }
-    /* Tabs */
-    [data-baseweb="tab"] {
-        font-weight: 600;
-    }
-    /* Emojis size fix */
-    .emoji {
-        font-size: 1.1em;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
 # --------------------------------
 # Landing page / Intro
 # --------------------------------
@@ -106,10 +63,7 @@ st.divider()
 # Configuration (from your code)
 # --------------------------------
 GUIDELINE_SOURCES = [
-    "https://www.racgp.org.au/running-a-practice/practice-standards/standards-5th-edition/standards-for-general-practices-5th-ed/general-practice-standards/gp-standard-1",
-    "https://acem.org.au/getmedia/51dc74f7-9ff0-42ce-872a-0437f3db640a/G24_04_Guidelines_on_Implementation_of_ATS_Jul-16.aspx",
-    "https://www.clinicalexcellence.qld.gov.au/improvement-exchange/clinical-prioritisation-criteria-cpc-making-triage-everyones-business",
-    "https://cesphn.org.au/wp-content/uploads/All_Categories/Practice_Support/20220309_Triage_Chart__1_.pdf",
+    Specify URL of guideline sources
 ]
 
 # --------------------------------
@@ -174,28 +128,7 @@ def answer_question(question, context):
 def triage_multisystem(summary: str):
     summary = summary.lower()
 
-    triage_rules = {
-        # Cardiology
-        "Urgent - Cardiology": ["chest pain", "shortness of breath", "heart attack", "unstable angina"],
-        "Semi-Urgent - Cardiology": ["ischaemic heart disease", "atrial fibrillation", "hypertension uncontrolled"],
-        "Routine - Cardiology": ["high blood pressure", "cholesterol"],
-
-        # Orthopedics
-        "Urgent - Orthopedics": ["fracture", "severe pain", "avascular necrosis", "obliterated joint space"],
-        "Semi-Urgent - Orthopedics": ["osteoarthritis", "hip pain", "joint space narrowing", "femoro-acetabular impingement"],
-        "Routine - Orthopedics": ["mild stiffness", "early osteoarthritis"],
-
-        # Neurology
-        "Urgent - Neurology": ["stroke", "seizure", "head trauma", "sudden weakness", "loss of consciousness"],
-        "Semi-Urgent - Neurology": [
-            "intermittent numbness", "tingling in the leg", "occasional imbalance", "mild weakness",
-            "radiculopathy", "nerve compression", "lumbar degenerative changes"
-        ],
-        "Routine - Neurology": ["tension headache", "mild neuropathy", "stable parkinson's disease"],
-
-        # General medicine fallback
-        "Urgent - General Medicine": ["sepsis", "acute infection"],
-        "Routine - General Medicine": ["fatigue", "check-up"]
+    
     }
 
     priorities = ["Urgent", "Semi-Urgent", "Routine"]
@@ -220,7 +153,7 @@ def triage_multisystem(summary: str):
     return primary_category, sorted(set(secondary_alerts))
 
 # --------------------------------
-# Guideline-aware agent: web fetching (full from your code)
+# Guideline-aware agent: web fetching 
 # --------------------------------
 def fetch_guideline_snippets(query_terms, max_sites=4, per_site_snippets=2):
     """
@@ -312,166 +245,31 @@ Keep it concise, clinical, and practical.
 # --------------------------------
 # Helper: persist uploaded file to a temp path for ingestion functions
 # --------------------------------
-def save_uploaded_file_to_temp(uploaded_file) -> str:
-    suffix = os.path.splitext(uploaded_file.name)[1]
-    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
-        tmp.write(uploaded_file.read())
-        return tmp.name
 
 # --------------------------------
 # Streamlit layout: Tabs
 # --------------------------------
-tab_upload, tab_results, tab_guidelines, tab_reco = st.tabs(
-    [" Upload Referral", " Results", " Guidelines", " Recommendations"]
-)
-
-with tab_upload:
-    st.subheader("Upload referral letter")
-    uploaded_file = st.file_uploader(
-        "Choose a file (PDF, DOCX, TXT, PNG, JPG)",
-        type=["pdf","docx","txt","png","jpg","jpeg"],
-        accept_multiple_files=False,
-        help="Supported formats: PDF, DOCX, TXT, and image files (OCR)."
-    )
-    question = st.text_input("Ask a clinical question", placeholder="e.g. What is the suspected diagnosis?")
-    process_btn = st.button("Process referral")
 
 # Initialize placeholders for outputs
-summary = None
-primary = None
-secondary = []
-answer = None
-guideline_snippets = []
-agentic = None
+
 
 # --------------------------------
 # Processing pipeline on button click
 # --------------------------------
-if process_btn:
-    if uploaded_file is None:
-        st.error("Please upload a referral file first.")
-    else:
-        st.success("✅ File uploaded. Processing...")
-        temp_path = save_uploaded_file_to_temp(uploaded_file)
-
-        try:
-            # Ingest
-            text = ingest_file(temp_path)
-            # Summarize
-            summary = summarize_text(text)
-            # Triage
-            primary, secondary = triage_multisystem(summary)
-            # Q&A
-            answer = answer_question(question, text) if question else "No question asked."
-            # Guideline fetch (derive terms)
-            primary_level = primary.split(" - ")[0]
-            primary_specialty = primary.split(" - ")[1]
-            query_terms = [
-                primary_specialty.lower(),
-                primary_level.lower(),
-                "triage", "outpatient", "prioritisation", "referral",
-                "numbness" if "numbness" in summary.lower() else "",
-                "tingling" if "tingling" in summary.lower() else "",
-                "imbalance" if "imbalance" in summary.lower() else "",
-                "weakness" if "weakness" in summary.lower() else "",
-                "osteoarthritis" if "osteoarthritis" in summary.lower() else "",
-            ]
-            guideline_snippets = fetch_guideline_snippets(query_terms)
-            # Agentic synthesis
-            agentic = agentic_recommendations(summary, primary, secondary, guideline_snippets)
-
-            st.toast("Processing complete", icon="✅")
-        finally:
-            # Clean up temp file
-            if os.path.exists(temp_path):
-                os.remove(temp_path)
 
 # --------------------------------
 # Results tab
 # --------------------------------
-with tab_results:
-    st.subheader("Summary & Triage")
-    if summary:
-        st.markdown(f"""
-        <div class="card">
-        <h3>Summary</h3>
-        <p>{summary}</p>
-        </div>
-        """, unsafe_allow_html=True)
 
-        emoji_map = {"Urgent": "⚠️", "Semi-Urgent": "🟠", "Routine": "🔵"}
-        primary_level = primary.split(" - ")[0]
-        primary_display = f"{emoji_map.get(primary_level, '🔵')} {primary}"
 
-        st.markdown(f"""
-        <div class="card">
-        <h3>Triage result</h3>
-        <p class="emoji"><strong>Primary:</strong> {primary_display}</p>
-        <p><strong>Secondary alerts:</strong> {", ".join(secondary) if secondary else "None"}</p>
-        </div>
-        """, unsafe_allow_html=True)
-
-        st.markdown(f"""
-        <div class="card">
-        <h3>Q&A</h3>
-        <p>{answer}</p>
-        </div>
-        """, unsafe_allow_html=True)
-
-        # Download buttons
-        col_a, col_b = st.columns(2)
-        with col_a:
-            st.download_button(
-                label="⬇️ Download summary",
-                data=summary,
-                file_name="summary.txt",
-                mime="text/plain"
-            )
-        with col_b:
-            full_report = f"Summary:\n{summary}\n\nTriage:\nPrimary: {primary}\nSecondary: {', '.join(secondary) if secondary else 'None'}\n\nQ&A:\n{answer}\n"
-            st.download_button(
-                label="⬇️ Download triage report",
-                data=full_report,
-                file_name="triage_report.txt",
-                mime="text/plain"
-            )
-    else:
-        st.info("Process a referral in the Upload tab to view results.")
-
+ # Download buttons
+        
+    
 # --------------------------------
 # Guidelines tab
 # --------------------------------
-with tab_guidelines:
-    st.subheader("Guideline highlights")
-    if guideline_snippets:
-        for g in guideline_snippets[:8]:
-            st.markdown(f"""
-            <div class="card">
-            <strong>{g['title']}</strong><br/>
-            {g['snippet']}<br/>
-            <a href="{g['url']}" target="_blank">Source</a>
-            </div>
-            """, unsafe_allow_html=True)
-    else:
-        st.info("Guideline highlights will appear after processing a referral.")
 
 # --------------------------------
 # Recommendations tab
-# --------------------------------
-with tab_reco:
-    st.subheader("Agentic recommendations")
-    if agentic:
-        st.markdown(f"""
-        <div class="card">
-        {agentic}
-        </div>
-        """, unsafe_allow_html=True)
+# --------------------------------")
 
-        st.download_button(
-            label="⬇️ Download recommendations",
-            data=agentic,
-            file_name="recommendations.txt",
-            mime="text/plain"
-        )
-    else:
-        st.info("Recommendations will appear after processing a referral.")
